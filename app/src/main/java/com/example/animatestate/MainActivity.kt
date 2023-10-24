@@ -3,14 +3,17 @@ package com.example.animatestate
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -198,12 +201,75 @@ private fun MotionDemo(){
 
 }
 
+@Composable
+private fun TransitionDemo() {
+    var boxState by remember { mutableStateOf(BoxPosition.Start) }
+
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
+    // criando updateTransiction que nos adcionar mais de um efeito no mesmo estado
+    val transition = updateTransition(targetState = boxState, label = "Color and Motion")
+
+    // adcionando efeitos de cor
+    val animatedColor: Color by transition.animateColor (
+        transitionSpec = {
+            tween(4000)
+        },
+        label = "ColorAnimation"
+    ) {
+        when(it) {
+            BoxPosition.Start -> Color.Red
+            BoxPosition.End -> Color.Magenta
+        }
+    }
+
+    // adcionando efeitos de animacao
+    val animatedPosition: Dp by transition.animateDp(
+        transitionSpec = {
+            spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessVeryLow)
+        },
+        label = "PositionAnimation"
+    ) {
+        when(it) {
+            BoxPosition.Start -> 0.dp
+            BoxPosition.End -> screenWidth - (screenWidth/ 2) - 70.dp
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = animatedPosition)
+                .size(70.dp)
+                .background(animatedColor)
+        )
+
+        Spacer(modifier = Modifier.height(50.dp))
+
+        Button(
+            onClick = {
+                boxState = when (boxState) {
+                    BoxPosition.Start -> BoxPosition.End
+                    BoxPosition.End -> BoxPosition.Start
+                }
+            },
+            modifier = Modifier.padding(10.dp)
+        ) {
+            Text(text = "Change Position")
+        }
+
+    }
+}
+
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun GreetingPreview() {
     AnimateStateTheme {
         // RotationDemo()
         // ColorChangeDemo()
-        MotionDemo()
+        // MotionDemo()
+        TransitionDemo()
     }
 }
